@@ -6,8 +6,8 @@ cp -rf default /etc/nginx/sites-available/default
 echo "Reloading Nginx..."
 nginx -s reload
 
-echo "ehridentityst"
-pm2 start "streamlit run /ehridentityst/ehridentityst.py --server.port 8501 --server.address 0.0.0.0" \
-  --name my-ehridentityst-app \
-  --output ehridentityst-out.log \
-  --error ehridentityst-error.log
+echo "identityagent"
+pm2 start "streamlit run /identityagent/identityagent.py --server.port 8501 --server.address 0.0.0.0" \
+  --name my-identityagent-app \
+  --output identityagent-out.log \
+  --error identityagent-error.log
