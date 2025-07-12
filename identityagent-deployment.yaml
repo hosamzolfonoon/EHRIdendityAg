@@ -1,16 +1,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ehridentityst
+  name: identityagent
   labels:
-    app: ehridentityst
+    app: identityagent
 spec:
   ports:
-    - port: 80  # Target port for the ehridentityst application
+    - port: 80  # Target port for the identityagent application
       targetPort: 8501
       nodePort: 30010  # Optional: Specify a NodePort (range: 30000-32767)
   selector:
-    app: ehridentityst
+    app: identityagent
     tier: frontend
   type: NodePort  # Changed from LoadBalancer to NodePort
 
@@ -19,9 +19,9 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: ehridentityst-pv-claim
+  name: identityagent-pv-claim
   labels:
-    app: ehridentityst
+    app: identityagent
 spec:
   accessModes:
     - ReadWriteOnce
@@ -34,53 +34,53 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ehridentityst
+  name: identityagent
   labels:
-    app: ehridentityst
+    app: identityagent
 spec:
   selector:
     matchLabels:
-      app: ehridentityst
+      app: identityagent
       tier: frontend
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: ehridentityst
+        app: identityagent
         tier: frontend
     spec:
       containers:
-      - image: hosamzolfonoon/ehridentityst:0710
+      - image: hosamzolfonoon/identityagent:0712
         imagePullPolicy: Always
-        name: ehridentityst
+        name: identityagent
         command: ["nginx", "-g", "daemon off;"]  # Keeps Nginx running in the foreground
         env:
-        - name: ehridentityst_DB_HOST
+        - name: identityagent_DB_HOST
           value: speechtextfast-mysql
         
-        - name: ehridentityst_DB_USER
+        - name: identityagent_DB_USER
           value: speechtextfast
         
-        - name: ehridentityst_DB_PASSWORD
+        - name: identityagent_DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: speechtextfast-mysql-pass
               key: password
         
-        - name: ehridentityst_DB_NAME
+        - name: identityagent_DB_NAME
           value: speechtextfast  # 🔹 Added missing database name
         
         ports:
         - containerPort: 80
-          name: ehridentityst
+          name: identityagent
         
         volumeMounts:
-        - name: ehridentityst-persistent-storage
+        - name: identityagent-persistent-storage
           mountPath: /var/www/html
       
       volumes:
-      - name: ehridentityst-persistent-storage
+      - name: identityagent-persistent-storage
         persistentVolumeClaim:
-          claimName: ehridentityst-pv-claim
+          claimName: identityagent-pv-claim
           

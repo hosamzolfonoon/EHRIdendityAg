@@ -5,7 +5,7 @@ FROM python:3.10
 ENV NODE_MAJOR=22
 
 # Set working directory
-WORKDIR /ehridentityst
+WORKDIR /identityagent
 
 RUN apt-get update && \
     apt-get install -y nginx zip nano bash curl default-mysql-client && \
@@ -16,16 +16,16 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/
 
 # Copy necessary files into Docker container
-COPY ehridentityst.py /ehridentityst
-COPY requirements.txt /ehridentityst
-COPY start.sh /ehridentityst
-COPY default /ehridentityst
-COPY synthetic_identification_bio_20250710163055 /ehridentityst/synthetic_identification_bio_20250710163055
+COPY identityagent.py .
+COPY requirements.txt .
+COPY start.sh .
+COPY default .
+COPY synthetic_identification_bio_20250710163055 /identityagent/synthetic_identification_bio_20250710163055
 
 
 # White Pages
 RUN mkdir .streamlit
-COPY config.toml /ehridentityst/.streamlit
+COPY config.toml /identityagent/.streamlit
 
 # Verify installation
 RUN node -v && npm -v
