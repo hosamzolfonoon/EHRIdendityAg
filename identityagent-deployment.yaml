@@ -51,7 +51,7 @@ spec:
         tier: frontend
     spec:
       containers:
-      - image: hosamzolfonoon/identityagent:0712
+      - image: hosamzolfonoon/identityagent:0713
         imagePullPolicy: Always
         name: identityagent
         command: ["nginx", "-g", "daemon off;"]  # Keeps Nginx running in the foreground
