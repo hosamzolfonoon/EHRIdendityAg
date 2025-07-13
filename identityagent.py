@@ -37,7 +37,7 @@ db_config_speechtextst = {
 ###            SQL QUERY             ###
 ########################################
 
-update_query = """
+query_update = """
 UPDATE ehr
 SET
     full_name = CASE 
@@ -94,9 +94,48 @@ WHERE email = %s AND start_time = %s;
 
 """
 
+query_check_row_exists = f"""
+SELECT 1 FROM ehr
+WHERE email = %s AND start_time = %s
+LIMIT 1;
+"""
+
+query_insert_initiate = """
+INSERT INTO ehr (
+    email,
+    start_time
+) VALUES (%s, %s);
+"""
+
 ########################################
 ####          Functions             ####
 ########################################
+def insert_initiate(email_start_time):
+    try:
+        connection = mysql.connector.connect(**db_config_speechtextst, autocommit=True)
+        cursor = connection.cursor()
+        cursor.execute(query_insert_initiate, email_start_time)
+    except mysql.connector.Error as db_err:
+        logging.error(f"❌ MySQL InsertToMySQL: {str(db_err)}")
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals() and connection.is_connected():
+            connection.close()
+
+def check_row_exists(email_start_time):
+    try:
+        connection = mysql.connector.connect(**db_config_speechtextst)
+        cursor = connection.cursor()
+        cursor.execute(query_insert_initiate, email_start_time)
+
+        exists = cursor.fetchone() is not None
+        return exists
+    except Exception as e:
+        return False
+    finally:
+        if 'cursor' in locals(): cursor.close()
+        if 'connection' in locals() and connection.is_connected(): connection.close()
 
 def update_identity_ehr(data_identity_confirmed: tuple) -> bool:
     """
@@ -112,7 +151,7 @@ def update_identity_ehr(data_identity_confirmed: tuple) -> bool:
     try:
         connection = mysql.connector.connect(**db_config_speechtextst, autocommit=True)
         cursor = connection.cursor()
-        cursor.execute(update_query, data_identity_confirmed)
+        cursor.execute(query_update, data_identity_confirmed)
         logging.info("✅ Confirmed identity data updated in EHR successfully.")
         return True
 
@@ -180,7 +219,6 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 @app.route('/', methods=['POST'])
-@app.route('/identityagent/', methods=['POST'])
 def upload():
     try:
         # Parse JSON from request
@@ -204,6 +242,8 @@ def upload():
         input_text = f"{prompt} {transcription_text}"
         model, tokenizer, device = load_model()
         result = infer_entities(input_text, model, tokenizer, device)
+        app.logger.info(f"✅ contenet ========  {result}")
+
 
         # Group tokens by entity types
         entity_types = ['per', 'tim', 'geo', 'mobile', 'email', 'street', 'post']
@@ -249,10 +289,15 @@ def upload():
             postal_code,
             email_address
         )
-
-        update_identity_ehr(data_identity)
-        app.logger.info(f"✅ Identity info updated for {email} at {start_time}")
-        return jsonify({"status": "success"}), 200
+        email_start_time = (email, start_time)
+        test_exist = check_row_exists(email_start_time)
+        if test_exist:
+            update_identity_ehr(data_identity)
+            app.logger.info(f"✅ Identity info updated for {email_start_time} == {data_identity}")
+        else:
+            insert_initiate(email_start_time)
+            update_identity_ehr(data_identity)
+            app.logger.info(f"✅ No Identity info for {email_start_time} == {data_identity}")
 
     except Exception as e:
         app.logger.exception("❌ Error while processing identity upload")
