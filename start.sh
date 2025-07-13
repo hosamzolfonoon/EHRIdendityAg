@@ -9,7 +9,7 @@ nginx -s reload
 echo "identityagent"
 echo "Starting Gunicorn server..."
 gunicorn -w 2\
- --daemon facereststpub:app\
+ --daemon identityagent:app\
  --bind 0.0.0.0:8000\
  --error-logfile ./error.log\
  --access-logfile ./access.log\
