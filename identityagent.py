@@ -180,6 +180,7 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 @app.route('/', methods=['POST'])
+@app.route('/identityagent/', methods=['POST'])
 def upload():
     try:
         # Parse JSON from request

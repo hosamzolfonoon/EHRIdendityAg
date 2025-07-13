@@ -7,7 +7,7 @@ metadata:
 spec:
   ports:
     - port: 80  # Target port for the identityagent application
-      targetPort: 8501
+      targetPort: 8000
       nodePort: 30010  # Optional: Specify a NodePort (range: 30000-32767)
   selector:
     app: identityagent
