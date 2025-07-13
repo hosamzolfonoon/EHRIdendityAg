@@ -7,7 +7,10 @@ echo "Reloading Nginx..."
 nginx -s reload
 
 echo "identityagent"
-pm2 start "streamlit run /identityagent/identityagent.py --server.port 8501 --server.address 0.0.0.0" \
-  --name my-identityagent-app \
-  --output identityagent-out.log \
-  --error identityagent-error.log
+echo "Starting Gunicorn server..."
+gunicorn -w 2\
+ --daemon facereststpub:app\
+ --bind 0.0.0.0:8000\
+ --error-logfile ./error.log\
+ --access-logfile ./access.log\
+ --capture-output --log-level debug
