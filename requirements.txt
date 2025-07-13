@@ -1,11 +1,10 @@
-streamlit==1.45.1
-pandas
-mysql-connector-python
-torch==2.3.0+cpu
---extra-index-url https://download.pytorch.org/whl/cpu
-transformers==4.41.1
-peft==0.10.0
+flask
 gunicorn
+mysql-connector-python
+pandas
+peft==0.10.0
+torch==2.3.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+transformers==4.41.1
 
 
 
