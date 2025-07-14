@@ -127,7 +127,7 @@ def check_row_exists(email_start_time):
     try:
         connection = mysql.connector.connect(**db_config_speechtextst)
         cursor = connection.cursor()
-        cursor.execute(query_insert_initiate, email_start_time)
+        cursor.execute(query_check_row_exists, email_start_time)
 
         exists = cursor.fetchone() is not None
         return exists
