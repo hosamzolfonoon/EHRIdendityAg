@@ -91,10 +91,64 @@ SET
     END
 
 WHERE email = %s AND start_time = %s;
+"""
+query_update_temp = """
+UPDATE temp_ehr
+SET
+    full_name = CASE 
+        WHEN full_name IS NULL 
+             OR TRIM(full_name) = '' 
+             OR TRIM(full_name) = "''" 
+             OR LENGTH(full_name) - LENGTH(REPLACE(full_name, ' ', '')) < 1
+        THEN %s 
+        ELSE full_name 
+    END,
 
+    birth_day = CASE 
+        WHEN birth_day IS NULL 
+             OR TRIM(birth_day) = '' 
+             OR TRIM(birth_day) = "''"
+        THEN %s 
+        ELSE birth_day 
+    END,
+
+    mobile_number = CASE 
+        WHEN mobile_number IS NULL 
+             OR TRIM(mobile_number) = '' 
+             OR TRIM(mobile_number) = "''"
+        THEN %s 
+        ELSE mobile_number 
+    END,
+
+    address = CASE 
+        WHEN address IS NULL 
+             OR TRIM(address) = '' 
+             OR TRIM(address) = "''" 
+             OR LENGTH(address) - LENGTH(REPLACE(address, ' ', '')) < 2
+        THEN %s 
+        ELSE address 
+    END,
+
+    postal_code = CASE 
+        WHEN postal_code IS NULL 
+             OR TRIM(postal_code) = '' 
+             OR TRIM(postal_code) = "''"
+        THEN %s 
+        ELSE postal_code 
+    END,
+
+    email_address = CASE 
+        WHEN email_address IS NULL 
+             OR TRIM(email_address) = '' 
+             OR TRIM(email_address) = "''"
+        THEN %s 
+        ELSE email_address 
+    END
+
+WHERE email = %s AND start_time = %s;
 """
 
-query_check_row_exists = f"""
+query_check_row_exists = """
 SELECT 1 FROM ehr
 WHERE email = %s AND start_time = %s
 LIMIT 1;
@@ -102,6 +156,13 @@ LIMIT 1;
 
 query_insert_initiate = """
 INSERT INTO ehr (
+    email,
+    start_time
+) VALUES (%s, %s);
+"""
+
+query_insert_initiate_temp = """
+INSERT INTO temp_ehr (
     email,
     start_time
 ) VALUES (%s, %s);
@@ -115,6 +176,7 @@ def insert_initiate(email_start_time):
         connection = mysql.connector.connect(**db_config_speechtextst, autocommit=True)
         cursor = connection.cursor()
         cursor.execute(query_insert_initiate, email_start_time)
+        cursor.execute(query_insert_initiate_temp, email_start_time)
     except mysql.connector.Error as db_err:
         logging.error(f"❌ MySQL InsertToMySQL: {str(db_err)}")
     finally:
@@ -152,6 +214,7 @@ def update_identity_ehr(data_identity_confirmed: tuple) -> bool:
         connection = mysql.connector.connect(**db_config_speechtextst, autocommit=True)
         cursor = connection.cursor()
         cursor.execute(query_update, data_identity_confirmed)
+        cursor.execute(query_update_temp, data_identity_confirmed)
         logging.info("✅ Confirmed identity data updated in EHR successfully.")
         return True
 
