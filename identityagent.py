@@ -238,7 +238,7 @@ def upload():
         dialouge_post = received_message['dialouge_post']
 
         # Combine prompt and transcription
-               model, tokenizer, device = load_model()
+        model, tokenizer, device = load_model()
         result = infer_entities(dialouge_post, model, tokenizer, device)
         app.logger.info(f"✅ contenet ========  {result}")
 
