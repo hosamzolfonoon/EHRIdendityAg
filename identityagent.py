@@ -242,6 +242,9 @@ def upload():
         result = infer_entities(dialouge_post, model, tokenizer, device)
         app.logger.info(f"✅ contenet ========  {result}")
 
+        # Handle empty result
+        if not result:
+            return jsonify({"status": "error", "message": "No entities found in the dialogue"}), 400
 
         # Group tokens by entity types
         entity_types = ['per', 'tim', 'geo', 'mobile', 'email', 'street', 'post']
@@ -288,6 +291,8 @@ def upload():
             email_address
         )
         email_start_time = (email, start_time)
+
+        # Check if the row exists before inserting or updating
         test_exist = check_row_exists(email_start_time)
         if test_exist:
             update_identity_ehr(data_identity)
@@ -295,11 +300,14 @@ def upload():
         else:
             insert_initiate(email_start_time)
             update_identity_ehr(data_identity)
-            app.logger.info(f"✅ No Identity info for {email_start_time} == {data_identity}")
+            app.logger.info(f"✅ Identity info inserted and updated for {email_start_time} == {data_identity}")
+
+        return jsonify({"status": "success", "message": "Identity information processed successfully"}), 200
 
     except Exception as e:
         app.logger.exception("❌ Error while processing identity upload")
         return jsonify({"status": "error", "detail": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0")
