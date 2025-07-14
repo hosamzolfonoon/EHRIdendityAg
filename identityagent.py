@@ -225,7 +225,7 @@ def upload():
         received_message = request.json
 
         # Required fields
-        required_fields = ['email', 'start_time', 'transcription_text', 'prompt']
+        required_fields = ['email', 'start_time', 'dialouge_post']
         missing_fields = [field for field in required_fields if field not in received_message]
 
         if missing_fields:
@@ -235,13 +235,11 @@ def upload():
         # Extract values
         email = received_message['email']
         start_time = received_message['start_time']
-        transcription_text = received_message['transcription_text']
-        prompt = received_message['prompt']
+        dialouge_post = received_message['dialouge_post']
 
         # Combine prompt and transcription
-        input_text = f"{prompt} {transcription_text}"
-        model, tokenizer, device = load_model()
-        result = infer_entities(input_text, model, tokenizer, device)
+               model, tokenizer, device = load_model()
+        result = infer_entities(dialouge_post, model, tokenizer, device)
         app.logger.info(f"✅ contenet ========  {result}")
 
 
