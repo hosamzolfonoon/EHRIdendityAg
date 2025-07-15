@@ -40,111 +40,23 @@ db_config_speechtextst = {
 query_update = """
 UPDATE ehr
 SET
-    full_name = CASE 
-        WHEN full_name IS NULL 
-             OR TRIM(full_name) = '' 
-             OR TRIM(full_name) = "''" 
-             OR LENGTH(full_name) - LENGTH(REPLACE(full_name, ' ', '')) < 1
-        THEN %s 
-        ELSE full_name 
-    END,
-
-    birth_day = CASE 
-        WHEN birth_day IS NULL 
-             OR TRIM(birth_day) = '' 
-             OR TRIM(birth_day) = "''"
-        THEN %s 
-        ELSE birth_day 
-    END,
-
-    mobile_number = CASE 
-        WHEN mobile_number IS NULL 
-             OR TRIM(mobile_number) = '' 
-             OR TRIM(mobile_number) = "''"
-        THEN %s 
-        ELSE mobile_number 
-    END,
-
-    address = CASE 
-        WHEN address IS NULL 
-             OR TRIM(address) = '' 
-             OR TRIM(address) = "''" 
-             OR LENGTH(address) - LENGTH(REPLACE(address, ' ', '')) < 2
-        THEN %s 
-        ELSE address 
-    END,
-
-    postal_code = CASE 
-        WHEN postal_code IS NULL 
-             OR TRIM(postal_code) = '' 
-             OR TRIM(postal_code) = "''"
-        THEN %s 
-        ELSE postal_code 
-    END,
-
-    email_address = CASE 
-        WHEN email_address IS NULL 
-             OR TRIM(email_address) = '' 
-             OR TRIM(email_address) = "''"
-        THEN %s 
-        ELSE email_address 
-    END
-
+    full_name = %s,
+    birth_day = %s,
+    mobile_number = %s,
+    address = %s,
+    postal_code = %s,
+    email_address = %s
 WHERE email = %s AND start_time = %s;
 """
 query_update_temp = """
 UPDATE temp_ehr
 SET
-    full_name = CASE 
-        WHEN full_name IS NULL 
-             OR TRIM(full_name) = '' 
-             OR TRIM(full_name) = "''" 
-             OR LENGTH(full_name) - LENGTH(REPLACE(full_name, ' ', '')) < 1
-        THEN %s 
-        ELSE full_name 
-    END,
-
-    birth_day = CASE 
-        WHEN birth_day IS NULL 
-             OR TRIM(birth_day) = '' 
-             OR TRIM(birth_day) = "''"
-        THEN %s 
-        ELSE birth_day 
-    END,
-
-    mobile_number = CASE 
-        WHEN mobile_number IS NULL 
-             OR TRIM(mobile_number) = '' 
-             OR TRIM(mobile_number) = "''"
-        THEN %s 
-        ELSE mobile_number 
-    END,
-
-    address = CASE 
-        WHEN address IS NULL 
-             OR TRIM(address) = '' 
-             OR TRIM(address) = "''" 
-             OR LENGTH(address) - LENGTH(REPLACE(address, ' ', '')) < 2
-        THEN %s 
-        ELSE address 
-    END,
-
-    postal_code = CASE 
-        WHEN postal_code IS NULL 
-             OR TRIM(postal_code) = '' 
-             OR TRIM(postal_code) = "''"
-        THEN %s 
-        ELSE postal_code 
-    END,
-
-    email_address = CASE 
-        WHEN email_address IS NULL 
-             OR TRIM(email_address) = '' 
-             OR TRIM(email_address) = "''"
-        THEN %s 
-        ELSE email_address 
-    END
-
+    full_name = %s,
+    birth_day = %s,
+    mobile_number = %s,
+    address = %s,
+    postal_code = %s,
+    email_address = %s
 WHERE email = %s AND start_time = %s;
 """
 
@@ -215,7 +127,7 @@ def check_row_exists(email_start_time):
         if 'connection' in locals() and connection.is_connected(): connection.close()
 
 
-def update_identity_ehr(data_identity_confirmed: tuple) -> bool:
+def update_identity_ehr(data_identity: tuple) -> bool:
     """
     Updates the EHR table with confirmed identity fields based on email and start_time.
 
@@ -229,8 +141,8 @@ def update_identity_ehr(data_identity_confirmed: tuple) -> bool:
     try:
         connection = mysql.connector.connect(**db_config_speechtextst, autocommit=True)
         cursor = connection.cursor()
-        cursor.execute(query_update, data_identity_confirmed)
-        cursor.execute(query_update_temp, data_identity_confirmed)
+        cursor.execute(query_update, data_identity)
+        cursor.execute(query_update_temp, data_identity)
         logging.info("✅ Confirmed identity data updated in EHR successfully.")
         return True
 
@@ -350,25 +262,25 @@ def upload():
             entities[current_type].append(" ".join(current_entity))
 
         # Construct output fields
-        full_name = " ".join(entities['per'][:2]) if len(entities['per']) >= 2 else ''
-        address = " ".join(entities['street'][:2]) if len(entities['street']) >= 2 else ''
+        full_name = " ".join(entities['per'][:2]) if len(entities['per']) >= 1 else ''
+        address = " ".join(entities['street'][:2]) if len(entities['street']) >= 1 else ''
         city = " ".join(entities['geo']) if entities['geo'] else ''
         postal_code = " ".join(entities['post']) if entities['post'] else ''
         mobile_number = entities['mobile'][0] if entities['mobile'] else ''
         email_address = entities['email'][0] if entities['email'] else ''
-        birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 2 else ''
+        birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
         address = ', '.join(part for part in [address, city] if part)
 
         data_identity = (
-            email,
-            start_time,
             full_name,
             birth_day,
             mobile_number,
             address,
             postal_code,
-            email_address
-        )
+            email_address,
+            email,
+            start_time
+            )
         email_start_time = (email, start_time)
 
         # Check if the row exists before inserting or updating
