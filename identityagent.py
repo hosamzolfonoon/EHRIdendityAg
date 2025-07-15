@@ -148,8 +148,14 @@ SET
 WHERE email = %s AND start_time = %s;
 """
 
-query_check_row_exists = """
+query_check_row_exists_ehr = """
 SELECT 1 FROM ehr
+WHERE email = %s AND start_time = %s
+LIMIT 1;
+"""
+
+query_check_row_exists_temp_ehr = """
+SELECT 1 FROM temp_ehr
 WHERE email = %s AND start_time = %s
 LIMIT 1;
 """
@@ -189,15 +195,25 @@ def check_row_exists(email_start_time):
     try:
         connection = mysql.connector.connect(**db_config_speechtextst)
         cursor = connection.cursor()
-        cursor.execute(query_check_row_exists, email_start_time)
 
-        exists = cursor.fetchone() is not None
-        return exists
+        # Check in ehr
+        cursor.execute(query_check_row_exists_ehr, email_start_time)
+        ehr_exists = cursor.fetchone() is not None
+
+        # Check in temp_ehr
+        cursor.execute(query_check_row_exists_temp_ehr, email_start_time)
+        temp_exists = cursor.fetchone() is not None
+
+        return ehr_exists, temp_exists
+
     except Exception as e:
-        return False
+        logging.exception("❌ Error in check_row_exists")
+        return False, False
+
     finally:
         if 'cursor' in locals(): cursor.close()
         if 'connection' in locals() and connection.is_connected(): connection.close()
+
 
 def update_identity_ehr(data_identity_confirmed: tuple) -> bool:
     """
@@ -356,8 +372,8 @@ def upload():
         email_start_time = (email, start_time)
 
         # Check if the row exists before inserting or updating
-        test_exist = check_row_exists(email_start_time)
-        if test_exist:
+        ehr_exist, temp_ehr_exist = check_row_exists(email_start_time)
+        if (ehr_exist and temp_ehr_exist):
             update_identity_ehr(data_identity)
             app.logger.info(f"✅ Identity info updated for {email_start_time} == {data_identity}")
         else:
