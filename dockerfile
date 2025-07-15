@@ -2,7 +2,7 @@
 FROM python:3.10
 
 # Set working directory
-WORKDIR /identityagent
+WORKDIR /ehridentityag
 
 RUN apt-get update && \
     apt-get install -y nginx zip nano bash curl net-tools iputils-ping libgl1 telnet default-mysql-client && \
@@ -10,11 +10,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/
 
 # Copy necessary files into Docker container
-COPY identityagent.py .
+COPY ehridentityag.py .
 COPY requirements.txt .
 COPY start.sh .
 COPY default .
-COPY synthetic_identification_bio_20250710163055 /identityagent/synthetic_identification_bio_20250710163055
+COPY synthetic_identification_bio_20250710163055 /ehridentityag/synthetic_identification_bio_20250710163055
 
 RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
