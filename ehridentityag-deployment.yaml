@@ -8,7 +8,7 @@ spec:
   ports:
     - port: 80  # Target port for the ehridentityag application
       targetPort: 8000
-      nodePort: 30010  # Optional: Specify a NodePort (range: 30000-32767)
+      nodePort: 30030  # Optional: Specify a NodePort (range: 30000-32767)
   selector:
     app: ehridentityag
     tier: frontend
