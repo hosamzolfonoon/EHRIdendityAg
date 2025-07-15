@@ -191,7 +191,7 @@ def infer_entities(text, model, tokenizer, device):
 ########################################
 ####     Main Configuration      ####
 ########################################
-adapter_path = "synthetic_identification_bio_20250715095216"
+adapter_path = "synthetic_identification_bio_20250710163055"
 label_list = [
     'O',
     'B-per', 'I-per',
