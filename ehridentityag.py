@@ -44,7 +44,7 @@ SET
     birth_day = %s,
     mobile_number = %s,
     address = %s,
-    postal_code = %s,
+    postal_code = %s
 WHERE email = %s AND start_time = %s;
 """
 query_update_temp = """
@@ -54,7 +54,7 @@ SET
     birth_day = %s,
     mobile_number = %s,
     address = %s,
-    postal_code = %s,
+    postal_code = %s
 WHERE email = %s AND start_time = %s;
 """
 
