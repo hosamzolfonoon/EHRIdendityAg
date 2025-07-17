@@ -45,7 +45,6 @@ SET
     mobile_number = %s,
     address = %s,
     postal_code = %s,
-    email_address = %s
 WHERE email = %s AND start_time = %s;
 """
 query_update_temp = """
@@ -56,7 +55,6 @@ SET
     mobile_number = %s,
     address = %s,
     postal_code = %s,
-    email_address = %s
 WHERE email = %s AND start_time = %s;
 """
 
@@ -133,7 +131,7 @@ def update_identity_ehr(data_identity: tuple) -> bool:
 
     Parameters:
     - data_identity_confirmed (tuple): Should follow this order:
-        (full_name, birth_day, mobile_number, address, postal_code, email_address, email, start_time)
+        (full_name, birth_day, mobile_number, address, postal_code, email, start_time)
 
     Returns:
     - bool: True if update is successful, False otherwise
@@ -267,7 +265,6 @@ def upload():
         city = " ".join(entities['geo']) if entities['geo'] else ''
         postal_code = " ".join(entities['post']) if entities['post'] else ''
         mobile_number = entities['mobile'][0] if entities['mobile'] else ''
-        email_address = entities['email'][0] if entities['email'] else ''
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
         address = ', '.join(part for part in [address, city] if part)
 
@@ -277,7 +274,6 @@ def upload():
             mobile_number,
             address,
             postal_code,
-            email_address,
             email,
             start_time
             )
