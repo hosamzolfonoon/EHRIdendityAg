@@ -14,7 +14,7 @@ COPY ehridentityag.py .
 COPY requirements.txt .
 COPY start.sh .
 COPY default .
-COPY synthetic_identification_bio_20250710163055 /ehridentityag/synthetic_identification_bio_20250710163055
+COPY synthetic_identification_bio_20250717112308 /ehridentityag/synthetic_identification_bio_20250717112308
 
 RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
