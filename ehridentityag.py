@@ -189,14 +189,13 @@ def infer_entities(text, model, tokenizer, device):
 ########################################
 ####     Main Configuration      ####
 ########################################
-adapter_path = "synthetic_identification_bio_20250710163055"
+adapter_path = "synthetic_identification_bio_20250717112308"
 label_list = [
     'O',
     'B-per', 'I-per',
     'B-tim', 'I-tim',
     'B-geo', 'I-geo',
     'B-mobile',
-    'B-email', 'I-email',
     'B-street', 'I-street',
     'B-post'
     ]
@@ -236,7 +235,7 @@ def upload():
             return jsonify({"status": "error", "message": "No entities found in the dialogue"}), 400
 
         # Group tokens by entity types
-        entity_types = ['per', 'tim', 'geo', 'mobile', 'email', 'street', 'post']
+        entity_types = ['per', 'tim', 'geo', 'mobile', 'street', 'post']
         entities = {key: [] for key in entity_types}
 
         current_entity = []
