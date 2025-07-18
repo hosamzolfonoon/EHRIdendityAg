@@ -12,12 +12,7 @@ import warnings
 ########################################
 ####     Logging Configuration      ####
 ########################################
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename="error.log",
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
+logging.basicConfig(level=logging.INFO)
 
 # Disable all warnings
 warnings.filterwarnings("ignore")
@@ -187,7 +182,7 @@ def infer_entities(text, model, tokenizer, device):
     return list(zip(tokens, aligned_labels))
 
 ########################################
-####     Main Configuration      ####
+####      Main Configuration        ####
 ########################################
 adapter_path = "synthetic_identification_bio_20250717112308"
 label_list = [
@@ -196,12 +191,11 @@ label_list = [
     'B-tim', 'I-tim',
     'B-geo', 'I-geo',
     'B-mobile',
-    'B-street', 'I-street',
     'B-post'
     ]
 
 #########################################
-###              MAIN APP             ###
+###              Main Body           ###
 #########################################
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -235,7 +229,7 @@ def upload():
             return jsonify({"status": "error", "message": "No entities found in the dialogue"}), 400
 
         # Group tokens by entity types
-        entity_types = ['per', 'tim', 'geo', 'mobile', 'street', 'post']
+        entity_types = ['per', 'tim', 'geo', 'mobile', 'post']
         entities = {key: [] for key in entity_types}
 
         current_entity = []
@@ -260,12 +254,9 @@ def upload():
 
         # Construct output fields
         full_name = " ".join(entities['per'][:2]) if len(entities['per']) >= 1 else ''
-        address = " ".join(entities['street'][:2]) if len(entities['street']) >= 1 else ''
-        city = " ".join(entities['geo']) if entities['geo'] else ''
         postal_code = " ".join(entities['post']) if entities['post'] else ''
         mobile_number = entities['mobile'][0] if entities['mobile'] else ''
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
-        address = ', '.join(part for part in [address, city] if part)
 
         data_identity = (
             full_name,
