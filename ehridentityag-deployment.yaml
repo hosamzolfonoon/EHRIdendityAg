@@ -56,19 +56,19 @@ spec:
         name: ehridentityag
         command: ["nginx", "-g", "daemon off;"]  # Keeps Nginx running in the foreground
         env:
-        - name: ehridentityag_DB_HOST
+        - name: DB_HOST
           value: speechtextfast-mysql
         
-        - name: ehridentityag_DB_USER
+        - name: DB_USER
           value: speechtextfast
         
-        - name: ehridentityag_DB_PASSWORD
+        - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
               name: speechtextfast-mysql-pass
               key: password
         
-        - name: ehridentityag_DB_NAME
+        - name: DB_NAME
           value: speechtextfast  # 🔹 Added missing database name
         
         ports:
