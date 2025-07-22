@@ -195,7 +195,7 @@ def postcod_to_address(postal_code):
 ########################################
 ####      Main Configuration        ####
 ########################################
-adapter_path = "synthetic_identification_bio_20250717112308"
+adapter_path = "synthetic_identification_bio_20250718150429"
 label_list = [
     'O',
     'B-per', 'I-per',
