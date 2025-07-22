@@ -3,6 +3,7 @@ import logging
 import mysql.connector
 from peft import PeftModel, PeftConfig
 import requests
+import re
 import torch
 from transformers import AutoTokenizer, AutoModelForTokenClassification, AutoConfig
 import warnings
@@ -192,6 +193,15 @@ def postcod_to_address(postal_code):
     except requests.RequestException as e:
         logging.error(f"❌ Failed to send data to chronic agent: {e}")
     return address
+
+def extract_valid_portugal_postal_code(postal_code: str) -> str | None:
+    """
+    Return the postal code if it matches the Portuguese format NNNN-NNN,
+    otherwise return None.
+    """
+    pattern = r"^\d{4}-\d{3}$"
+    return postal_code if re.match(pattern, postal_code) else None
+
     
 ########################################
 ####      Main Configuration        ####
@@ -269,7 +279,11 @@ def upload():
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
         mobile_number = entities['mobile'][0] if entities['mobile'] else ''
         postal_code = " ".join(entities['post']) if entities['post'] else ''
-        address = postcod_to_address(postal_code)
+        postal_code = extract_valid_portugal_postal_code()
+        if postal_code:
+            address = postcod_to_address(postal_code)
+        else:
+            address = 'not_detected'
 
         data_identity = (
             full_name,
