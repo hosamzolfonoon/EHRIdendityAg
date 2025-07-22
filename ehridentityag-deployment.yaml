@@ -51,7 +51,7 @@ spec:
         tier: frontend
     spec:
       containers:
-      - image: hosamzolfonoon/ehridentityag:0717
+      - image: hosamzolfonoon/ehridentityag:0722
         imagePullPolicy: Always
         name: ehridentityag
         command: ["nginx", "-g", "daemon off;"]  # Keeps Nginx running in the foreground

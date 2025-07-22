@@ -1,11 +1,10 @@
 from flask import Flask, request, jsonify
-import torch
-from transformers import AutoTokenizer, AutoModelForTokenClassification, AutoConfig
-from peft import PeftModel, PeftConfig
 import logging
 import mysql.connector
-import pandas as pd
-from typing import Optional
+from peft import PeftModel, PeftConfig
+import requests
+import torch
+from transformers import AutoTokenizer, AutoModelForTokenClassification, AutoConfig
 import warnings
 
 
@@ -181,6 +180,18 @@ def infer_entities(text, model, tokenizer, device):
 
     return list(zip(tokens, aligned_labels))
 
+def postcod_to_address(postal_code):
+    postal_code = str(postal_code)
+    try:
+        response = requests.post("https://dataanalyst.pt/ehrptaddsqlag/", json={'postal_code': postal_code})
+        response.raise_for_status()
+        # Get predicted sentiment
+        address = response.json().get('address', 'not_detected')
+        logging.info(f"✅ Address agent response: {response.status_code} - {response.text}")
+    except requests.RequestException as e:
+        logging.error(f"❌ Failed to send data to chronic agent: {e}")
+    return address
+    
 ########################################
 ####      Main Configuration        ####
 ########################################
@@ -254,9 +265,10 @@ def upload():
 
         # Construct output fields
         full_name = " ".join(entities['per'][:2]) if len(entities['per']) >= 1 else ''
-        postal_code = " ".join(entities['post']) if entities['post'] else ''
-        mobile_number = entities['mobile'][0] if entities['mobile'] else ''
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
+        mobile_number = entities['mobile'][0] if entities['mobile'] else ''
+        postal_code = " ".join(entities['post']) if entities['post'] else ''
+        address = postcod_to_address(postal_code)
 
         data_identity = (
             full_name,
