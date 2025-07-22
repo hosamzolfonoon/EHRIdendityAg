@@ -182,6 +182,7 @@ def infer_entities(text, model, tokenizer, device):
 
 def postcod_to_address(postal_code):
     postal_code = str(postal_code)
+    address = 'not_detected'
     try:
         response = requests.post("https://dataanalyst.pt/ehrptaddsqlag/", json={'postal_code': postal_code})
         response.raise_for_status()
