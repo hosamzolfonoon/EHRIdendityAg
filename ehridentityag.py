@@ -206,7 +206,7 @@ def extract_valid_portugal_postal_code(postal_code: str) -> str | None:
 ########################################
 ####      Main Configuration        ####
 ########################################
-adapter_path = "synthetic_identification_bio_20250718150429"
+adapter_path = "synthetic_identification_bio_20250723162236"
 label_list = [
     'O',
     'B-per', 'I-per',
@@ -279,7 +279,7 @@ def upload():
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
         mobile_number = entities['mobile'][0] if entities['mobile'] else ''
         postal_code = " ".join(entities['post']) if entities['post'] else ''
-        postal_code = extract_valid_portugal_postal_code()
+        postal_code = extract_valid_portugal_postal_code(postal_code)
         if postal_code:
             address = postcod_to_address(postal_code)
         else:
