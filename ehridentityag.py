@@ -183,7 +183,6 @@ def infer_entities(text, model, tokenizer, device):
 
 def postcod_to_address(postal_code):
     postal_code = str(postal_code)
-    address = 'not_detected'
     try:
         response = requests.post("https://dataanalyst.pt/ehrptaddsqlag/", json={'postal_code': postal_code})
         response.raise_for_status()
@@ -275,6 +274,7 @@ def upload():
             entities[current_type].append(" ".join(current_entity))
 
         # Construct output fields
+        address = 'not_detected'
         full_name = " ".join(entities['per'][:2]) if len(entities['per']) >= 1 else ''
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
         mobile_number = entities['mobile'][0] if entities['mobile'] else ''
@@ -282,8 +282,6 @@ def upload():
         postal_code = extract_valid_portugal_postal_code(postal_code)
         if postal_code:
             address = postcod_to_address(postal_code)
-        else:
-            address = 'not_detected'
 
         data_identity = (
             full_name,
