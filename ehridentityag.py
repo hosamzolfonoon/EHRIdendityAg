@@ -279,9 +279,11 @@ def upload():
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
         mobile_number = entities['mobile'][0] if entities['mobile'] else ''
         postal_code = " ".join(entities['post']) if entities['post'] else ''
-        postal_code = extract_valid_portugal_postal_code(postal_code)
+        #postal_code = extract_valid_portugal_postal_code(postal_code)
         if postal_code:
             address = postcod_to_address(postal_code)
+            
+        app.logger.info(f"✅✅✅ address ========  {address}")
 
         data_identity = (
             full_name,
