@@ -27,7 +27,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi
+      storage: 5Gi
 
 ---
 
@@ -54,6 +54,13 @@ spec:
       - image: hosamzolfonoon/ehridentityag:0723
         imagePullPolicy: Always
         name: ehridentityag
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
         command: ["nginx", "-g", "daemon off;"]  # Keeps Nginx running in the foreground
         env:
         - name: DB_HOST
@@ -77,7 +84,7 @@ spec:
         
         volumeMounts:
         - name: ehridentityag-persistent-storage
-          mountPath: /var/www/html
+          mountPath: /app/data
       
       volumes:
       - name: ehridentityag-persistent-storage
