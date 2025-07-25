@@ -56,11 +56,11 @@ spec:
         name: ehridentityag
         resources:
           requests:
-            memory: "2Gi"
-            cpu: "1"
+            memory: "1.5Gi"
+            cpu: "500"
           limits:
             memory: "3Gi"
-            cpu: "2"
+            cpu: "1"
         command: ["nginx", "-g", "daemon off;"]  # Keeps Nginx running in the foreground
         env:
         - name: DB_HOST
