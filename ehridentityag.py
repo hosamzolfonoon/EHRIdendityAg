@@ -135,7 +135,7 @@ def update_identity_ehr(data_identity_dic_: dict) -> bool:
         connection = mysql.connector.connect(**db_config_speechtextst, autocommit=True)
         cursor = connection.cursor()
         # Fetch current row from DB
-        cursor.execute("SELECT full_name, birth_day, mobile_number, address, postal_code FROM temp_ehr WHERE email = %s AND start_time = %s;", (input_data['email'], input_data['start_time']))
+        cursor.execute("SELECT full_name, birth_day, mobile_number, address, postal_code FROM temp_ehr WHERE email = %s AND start_time = %s;", (data_identity_dic_['email'], data_identity_dic_['start_time']))
         existing_row = cursor.fetchone()
         if existing_row:
             # Prepare new values with fallback
