@@ -120,7 +120,7 @@ def check_row_exists(email_start_time):
         if 'connection' in locals() and connection.is_connected(): connection.close()
 
 
-def update_identity_ehr(data_identity: tuple) -> bool:
+def update_identity_ehr(data_identity_dic_: dict) -> bool:
     """
     Updates the EHR table with confirmed identity fields based on email and start_time.
 
@@ -134,8 +134,22 @@ def update_identity_ehr(data_identity: tuple) -> bool:
     try:
         connection = mysql.connector.connect(**db_config_speechtextst, autocommit=True)
         cursor = connection.cursor()
-        cursor.execute(query_update, data_identity)
-        cursor.execute(query_update_temp, data_identity)
+        # Fetch current row from DB
+        cursor.execute("SELECT full_name, birth_day, mobile_number, address, postal_code FROM temp_ehr WHERE email = %s AND start_time = %s;", (input_data['email'], input_data['start_time']))
+        existing_row = cursor.fetchone()
+        if existing_row:
+            # Prepare new values with fallback
+            updated_values = [
+                validate_field(data_identity_dic_['full_name']) or existing_row[0],
+                validate_field(data_identity_dic_['birth_day']) or existing_row[1],
+                validate_field(data_identity_dic_['mobile_number']) or existing_row[2],
+                validate_field(data_identity_dic_['address']) or existing_row[3],
+                validate_field(data_identity_dic_['postal_code']) or existing_row[4],
+                data_identity_dic_['email'],
+                data_identity_dic_['start_time'],
+            ]
+        cursor.execute(query_update, updated_values)
+        cursor.execute(query_update_temp, updated_values)
         logging.info("✅ Confirmed identity data updated in EHR successfully.")
         return True
 
@@ -201,7 +215,9 @@ def extract_valid_portugal_postal_code(postal_code: str) -> str | None:
     pattern = r"^\d{4}-\d{3}$"
     return postal_code if re.match(pattern, postal_code) else None
 
-    
+def validate_field(value):
+    return value if value and len(str(value)) >= 6 else None
+
 ########################################
 ####      Main Configuration        ####
 ########################################
@@ -285,26 +301,27 @@ def upload():
             
         app.logger.info(f"✅✅✅ address ========  {address}")
 
-        data_identity = (
-            full_name,
-            birth_day,
-            mobile_number,
-            address,
-            postal_code,
-            email,
-            start_time
-            )
+        data_identity_dic = {
+            "full_name": full_name,
+            "birth_day": birth_day,
+            "mobile_number": mobile_number,
+            "address": address,
+            "postal_code": postal_code,
+            "email": email,
+            "start_time": start_time,
+            }
+
         email_start_time = (email, start_time)
 
         # Check if the row exists before inserting or updating
         ehr_exist, temp_ehr_exist = check_row_exists(email_start_time)
         if (ehr_exist and temp_ehr_exist):
-            update_identity_ehr(data_identity)
-            app.logger.info(f"✅ Identity info updated for {email_start_time} == {data_identity}")
+            update_identity_ehr(data_identity_dic)
+            app.logger.info(f"✅ Identity info updated for {email_start_time} == {data_identity_dic.values}")
         else:
             insert_initiate(email_start_time)
-            update_identity_ehr(data_identity)
-            app.logger.info(f"✅ Identity info inserted and updated for {email_start_time} == {data_identity}")
+            update_identity_ehr(data_identity_dic)
+            app.logger.info(f"✅ Identity info inserted and updated for {email_start_time} == {data_identity_dic.values}")
 
         return jsonify({"status": "success", "message": "Identity information processed successfully"}), 200
 
