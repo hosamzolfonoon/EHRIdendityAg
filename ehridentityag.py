@@ -303,7 +303,7 @@ def upload():
         else:
             postal_code = mobile_number
         if postal_code:
-            postal_code = extract_valid_portugal_postal_code(postal_code, )
+            postal_code = extract_valid_portugal_postal_code(postal_code)
             if postal_code:
                 postcod_to_address(postal_code, email, start_time)
         app.logger.info(f"✅✅✅ postal_code ========  {postal_code}")
