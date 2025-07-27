@@ -8,7 +8,7 @@ nginx -s reload
 
 echo "ehridentityag"
 echo "Starting Gunicorn server..."
-gunicorn -w 2\
+gunicorn -w 1\
  --daemon ehridentityag:app\
  --bind 0.0.0.0:8000\
  --error-logfile ./error.log\
