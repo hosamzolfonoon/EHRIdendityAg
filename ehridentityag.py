@@ -216,13 +216,27 @@ def extract_valid_portugal_postal_code(postal_code: str) -> str | None:
     pattern = r"^\d{4}-\d{3}$"
     return postal_code if re.match(pattern, postal_code) else None
 
+
+def extract_valid_portugal_mobile_number(mobile_str: str) -> str | None:
+    """
+    Extracts and returns a valid Portuguese mobile number in the format 9XXXXXXXX,
+    where X is a digit. Removes separators like '-', '.', or spaces.
+    Returns None if no valid number is found.
+    """
+    # Remove common separators
+    clean_number = re.sub(r"[^\d]", "", mobile_str)
+    # Validate the format: must start with 9 and be 9 digits long
+    if re.fullmatch(r"9\d{8}", clean_number):
+        return clean_number
+    return None
+
 def validate_field(value):
     return value if value and len(str(value)) >= 6 else None
 
 ########################################
 ####      Main Configuration        ####
 ########################################
-adapter_path = "synthetic_identification_bio_20250727171141"
+adapter_path = "synthetic_identification_bio_20250727141249"
 label_list = [
     'O',
     'B-per', 'I-per',
@@ -296,6 +310,8 @@ def upload():
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
         mobile_number = " ".join(entities['mobile'][:2]) if len(entities['mobile']) >= 1 else ''
         postal_code = " ".join(entities['post'][:2]) if len(entities['post']) >= 1 else ''
+        if mobile_number:
+            mobile_number = extract_valid_portugal_mobile_number(mobile_number)
         if postal_code:
             postal_code = extract_valid_portugal_postal_code(postal_code)
             address = postcod_to_address(postal_code)
