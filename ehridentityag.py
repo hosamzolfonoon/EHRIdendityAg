@@ -197,15 +197,16 @@ def infer_entities(text, model, tokenizer, device):
 
 def postcod_to_address(postal_code):
     postal_code = str(postal_code)
+    address = 'not_detected'  # default assignment
     try:
         response = requests.post("https://dataanalyst.pt/ehrptaddsqlag/", json={'postal_code': postal_code})
         response.raise_for_status()
-        # Get predicted sentiment
         address = response.json().get('address', 'not_detected')
         logging.info(f"✅ Address agent response: {response.status_code} - {response.text}")
     except requests.RequestException as e:
         logging.error(f"❌ Failed to send data to chronic agent: {e}")
     return address
+
 
 def extract_valid_portugal_postal_code(postal_code: str) -> str | None:
     """
