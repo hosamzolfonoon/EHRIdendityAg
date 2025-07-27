@@ -221,14 +221,14 @@ def validate_field(value):
 ########################################
 ####      Main Configuration        ####
 ########################################
-adapter_path = "synthetic_identification_bio_20250723162236"
+adapter_path = "synthetic_identification_bio_20250727141249"
 label_list = [
     'O',
     'B-per', 'I-per',
     'B-tim', 'I-tim',
     'B-geo', 'I-geo',
-    'B-mobile',
-    'B-post'
+    'B-mobile', 'I-mobile',
+    'B-post', 'I-post',
     ]
 
 #########################################
@@ -293,10 +293,10 @@ def upload():
         address = 'not_detected'
         full_name = " ".join(entities['per'][:2]) if len(entities['per']) >= 1 else ''
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
-        mobile_number = entities['mobile'][0] if entities['mobile'] else ''
-        postal_code = " ".join(entities['post']) if entities['post'] else ''
-        #postal_code = extract_valid_portugal_postal_code(postal_code)
+        mobile_number = " ".join(entities['mobile'][:2]) if len(entities['mobile']) >= 1 else ''
+        postal_code = " ".join(entities['post'][:2]) if len(entities['post']) >= 1 else ''
         if postal_code:
+            postal_code = extract_valid_portugal_postal_code(postal_code)
             address = postcod_to_address(postal_code)
             
         app.logger.info(f"✅✅✅ address ========  {address}")
