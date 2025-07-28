@@ -135,9 +135,9 @@ def update_identity_ehr(data_identity_dic_: dict) -> bool:
         if existing_row:
             # Prepare new values with fallback
             updated_values = [
-                validate_field(data_identity_dic_['full_name']) or existing_row[0],
-                validate_field(data_identity_dic_['birth_day']) or existing_row[1],
-                validate_field(data_identity_dic_['mobile_number']) or existing_row[2],
+                validate_field(existing_row[0]) or data_identity_dic_['full_name'],
+                validate_field(existing_row[1]) or data_identity_dic_['birth_day'],
+                validate_field(existing_row[2]) or data_identity_dic_['mobile_number'],
                 data_identity_dic_['email'],
                 data_identity_dic_['start_time'],
             ]
@@ -204,16 +204,19 @@ def postcod_to_address(postal_code, email, start_time):
 def extract_valid_portugal_postal_code(postal_code_str: str) -> str | None:
     """
     Extracts and returns a valid Portuguese postal code in the format NNNN-NNN.
-    Removes common separators or trailing characters.
+    Automatically inserts the dash if missing.
     Returns None if no valid postal code is found.
     """
-    # Clean the input: remove unwanted characters except digits and dash
-    clean_code = re.sub(r"[^\d\-]", "", postal_code_str)
-    # Validate format: must match NNNN-NNN
-    if re.fullmatch(r"\d{4}-\d{3}", clean_code):
-        return clean_code
+    # Remove all non-digit characters
+    digits_only = re.sub(r"\D", "", postal_code_str)
+    # If exactly 7 digits, insert dash after the first 4 digits
+    if len(digits_only) == 7:
+        formatted_code = digits_only[:4] + '-' + digits_only[4:]
+        return formatted_code
+    # If already in correct format (NNNN-NNN)
+    if re.fullmatch(r"\d{4}-\d{3}", postal_code_str):
+        return postal_code_str
     return None
-
 
 def extract_valid_portugal_mobile_number(mobile_str: str) -> str | None:
     """
@@ -231,6 +234,22 @@ def extract_valid_portugal_mobile_number(mobile_str: str) -> str | None:
 def validate_field(value):
     return value if value and len(str(value)) >= 8 else None
 
+def refine_numbers_in_phrase(phrase: str) -> str:
+    """
+    Cleans numbers in a phrase by removing separators like spaces, commas, dashes,
+    and joins them as continuous digits.
+    Example:
+    Input: "Could you please tell me your mobile phone number? 911-275-8591"
+    Output: "Could you please tell me your mobile phone number? 9112758591"
+    """
+    def clean_number(match):
+        # Remove all non-digit characters from the matched number block
+        return re.sub(r'\D', '', match.group())
+
+    # Replace any numeric block (with separators) with cleaned version
+    refined_phrase = re.sub(r'(\d[\d\s,.-]*)', clean_number, phrase)
+    return refined_phrase
+
 ########################################
 ####      Main Configuration        ####
 ########################################
@@ -240,8 +259,8 @@ label_list = [
     'B-per', 'I-per',
     'B-tim', 'I-tim',
     'B-geo', 'I-geo',
-    'B-mobile', 'I-mobile'
-    'B-post', 'I-post'
+    'B-mobile', 'I-mobile',
+    'B-post', 'I-post',
     ]
 
 #########################################
@@ -255,7 +274,6 @@ def upload():
     try:
         # Parse JSON from request
         received_message = request.json
-
         # Required fields
         required_fields = ['email', 'start_time', 'dialouge_post']
         missing_fields = [field for field in required_fields if field not in received_message]
@@ -266,6 +284,7 @@ def upload():
         email = received_message['email']
         start_time = received_message['start_time']
         dialouge_post = received_message['dialouge_post']
+        dialouge_post = refine_numbers_in_phrase(dialouge_post)
         # Combine prompt and transcription
         model, tokenizer, device = load_model()
         result = infer_entities(dialouge_post, model, tokenizer, device)
@@ -280,32 +299,46 @@ def upload():
         current_type = None
         for token, label in result:
             if label.startswith("B-"):
+                # Save any previous entity before starting a new one
                 if current_entity and current_type:
                     entities[current_type].append(" ".join(current_entity))
                 current_type = label[2:]
                 current_entity = [token]
-            elif label.startswith("I-") and current_type == label[2:]:
-                current_entity.append(token)
-            else:
+            elif label.startswith("I-"):
+                label_type = label[2:]
+                if current_type == label_type:
+                    current_entity.append(token)
+                else:
+                    # Handle orphan I-: treat it as a new B-
+                    if current_entity and current_type:
+                        entities[current_type].append(" ".join(current_entity))
+                    current_type = label_type
+                    current_entity = [token]
+            else:  # label == "O"
                 if current_entity and current_type:
                     entities[current_type].append(" ".join(current_entity))
                 current_entity = []
                 current_type = None
+        # Append last entity if any
         if current_entity and current_type:
             entities[current_type].append(" ".join(current_entity))
         # Construct output 
         full_name = " ".join(entities['per']) if entities['per'] else ''
         birth_day = " ".join(entities['tim']) if entities['tim'] else ''
-        mobile_number = entities['mobile'][0] if entities['mobile'] else ''
-        postal_code = entities['mobile'][1] if len(entities['mobile']) > 1 else ''
-        postal_code = entities['post'][0] if entities['post'] and postal_code == '' else ''
-        if mobile_number and len(mobile_number) >= 9:
-            mobile_number = extract_valid_portugal_mobile_number(mobile_number)
+        mobile_number = " ".join(entities['mobile']) if entities['mobile'] else ''
+        postal_code = " ".join(entities['post']) if entities['post'] else ''
+        #if mobile_number:
+        #    mobile_number = extract_valid_portugal_mobile_number(mobile_number)
         if postal_code:
             postal_code = extract_valid_portugal_postal_code(postal_code)
             if postal_code:
                 postcod_to_address(postal_code, email, start_time)
-        app.logger.info(f"✅✅✅ postal_code ========  {postal_code}")
+        else:
+            postal_code = mobile_number
+            postal_code = extract_valid_portugal_postal_code(postal_code)
+            app.logger.info(f"✅✅✅ epostal_code_afteeeeeer ========  {postal_code}")
+            if postal_code:
+                postcod_to_address(postal_code, email, start_time)
         data_identity_dic = {
             "full_name": full_name,
             "birth_day": birth_day,
@@ -313,6 +346,7 @@ def upload():
             "email": email,
             "start_time": start_time,
             }
+
         email_start_time = (email, start_time)
         # Check if the row exists before inserting or updating
         ehr_exist, temp_ehr_exist = check_row_exists(email_start_time)
