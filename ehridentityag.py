@@ -234,14 +234,14 @@ def validate_field(value):
 ########################################
 ####      Main Configuration        ####
 ########################################
-adapter_path = "synthetic_identification_bio_20250723162236"
+adapter_path = "synthetic_identification_bio_20250727171141"
 label_list = [
     'O',
     'B-per', 'I-per',
     'B-tim', 'I-tim',
     'B-geo', 'I-geo',
-    'B-mobile',
-    'B-post'
+    'B-mobile', 'I-mobile'
+    'B-post', 'I-post'
     ]
 
 #########################################
