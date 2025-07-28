@@ -197,9 +197,9 @@ def postcod_to_address(postal_code, email, start_time):
                 "start_time": start_time
                 })
         response.raise_for_status()
-        logging.info(f"✅ Address agent response: {response.status_code} - {response.text}")
+        logging.info(f"✅ Address agent is sent for postal code: {postal_code}")
     except requests.RequestException as e:
-        logging.error(f"❌ Failed to send data to chronic agent: {e}")
+        logging.error(f"❌ Failed to send data to address agent: {e}")
 
 def extract_valid_portugal_postal_code(postal_code_str: str) -> str | None:
     """
@@ -293,15 +293,14 @@ def upload():
                 current_type = None
         if current_entity and current_type:
             entities[current_type].append(" ".join(current_entity))
-        # Construct output fields
-        full_name = " ".join(entities['per'][:2]) if len(entities['per']) >= 1 else ''
-        birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
-        mobile_number = " ".join(entities['mobile'][:2]) if len(entities['mobile']) >= 1 else ''
-        postal_code = " ".join(entities['post'][:2]) if len(entities['post']) >= 1 else ''
+        # Construct output 
+        full_name = " ".join(entities['per']) if entities['per'] else ''
+        birth_day = " ".join(entities['tim']) if entities['tim'] else ''
+        mobile_number = entities['mobile'][0] if entities['mobile'] else ''
+        postal_code = entities['mobile'][1] if len(entities['mobile']) > 1 else ''
+        postal_code = entities['post'][0] if entities['post'] and postal_code == '' else ''
         if mobile_number and len(mobile_number) >= 9:
             mobile_number = extract_valid_portugal_mobile_number(mobile_number)
-        else:
-            postal_code = mobile_number
         if postal_code:
             postal_code = extract_valid_portugal_postal_code(postal_code)
             if postal_code:

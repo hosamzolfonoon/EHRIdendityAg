@@ -37,19 +37,16 @@ UPDATE ehr
 SET
     full_name = %s,
     birth_day = %s,
-    mobile_number = %s,
-    address = %s,
-    postal_code = %s
+    mobile_number = %s
 WHERE email = %s AND start_time = %s;
 """
+
 query_update_temp = """
 UPDATE temp_ehr
 SET
     full_name = %s,
     birth_day = %s,
-    mobile_number = %s,
-    address = %s,
-    postal_code = %s
+    mobile_number = %s
 WHERE email = %s AND start_time = %s;
 """
 
@@ -123,11 +120,9 @@ def check_row_exists(email_start_time):
 def update_identity_ehr(data_identity_dic_: dict) -> bool:
     """
     Updates the EHR table with confirmed identity fields based on email and start_time.
-
     Parameters:
     - data_identity_confirmed (tuple): Should follow this order:
-        (full_name, birth_day, mobile_number, address, postal_code, email, start_time)
-
+        (full_name, birth_day, mobile_number, email, start_time)
     Returns:
     - bool: True if update is successful, False otherwise
     """
@@ -135,7 +130,7 @@ def update_identity_ehr(data_identity_dic_: dict) -> bool:
         connection = mysql.connector.connect(**db_config_speechtextst, autocommit=True)
         cursor = connection.cursor()
         # Fetch current row from DB
-        cursor.execute("SELECT full_name, birth_day, mobile_number, address, postal_code FROM temp_ehr WHERE email = %s AND start_time = %s;", (input_data['email'], input_data['start_time']))
+        cursor.execute("SELECT full_name, birth_day, mobile_number FROM temp_ehr WHERE email = %s AND start_time = %s;", (data_identity_dic_['email'], data_identity_dic_['start_time']))
         existing_row = cursor.fetchone()
         if existing_row:
             # Prepare new values with fallback
@@ -143,8 +138,6 @@ def update_identity_ehr(data_identity_dic_: dict) -> bool:
                 validate_field(data_identity_dic_['full_name']) or existing_row[0],
                 validate_field(data_identity_dic_['birth_day']) or existing_row[1],
                 validate_field(data_identity_dic_['mobile_number']) or existing_row[2],
-                validate_field(data_identity_dic_['address']) or existing_row[3],
-                validate_field(data_identity_dic_['postal_code']) or existing_row[4],
                 data_identity_dic_['email'],
                 data_identity_dic_['start_time'],
             ]
@@ -152,11 +145,9 @@ def update_identity_ehr(data_identity_dic_: dict) -> bool:
         cursor.execute(query_update_temp, updated_values)
         logging.info("✅ Confirmed identity data updated in EHR successfully.")
         return True
-
     except mysql.connector.Error as db_err:
         logging.exception("❌ MySQL update error")
         return False
-
     finally:
         if 'cursor' in locals():
             cursor.close()
@@ -195,28 +186,50 @@ def infer_entities(text, model, tokenizer, device):
 
     return list(zip(tokens, aligned_labels))
 
-def postcod_to_address(postal_code):
+def postcod_to_address(postal_code, email, start_time):
     postal_code = str(postal_code)
     try:
-        response = requests.post("https://dataanalyst.pt/ehrptaddsqlag/", json={'postal_code': postal_code})
+        response = requests.post(
+            "https://dataanalyst.pt/ehrptaddsqlag/",
+            json={
+                'postal_code': postal_code,
+                "email": email,
+                "start_time": start_time
+                })
         response.raise_for_status()
-        # Get predicted sentiment
-        address = response.json().get('address', 'not_detected')
         logging.info(f"✅ Address agent response: {response.status_code} - {response.text}")
     except requests.RequestException as e:
         logging.error(f"❌ Failed to send data to chronic agent: {e}")
-    return address
 
-def extract_valid_portugal_postal_code(postal_code: str) -> str | None:
+def extract_valid_portugal_postal_code(postal_code_str: str) -> str | None:
     """
-    Return the postal code if it matches the Portuguese format NNNN-NNN,
-    otherwise return None.
+    Extracts and returns a valid Portuguese postal code in the format NNNN-NNN.
+    Removes common separators or trailing characters.
+    Returns None if no valid postal code is found.
     """
-    pattern = r"^\d{4}-\d{3}$"
-    return postal_code if re.match(pattern, postal_code) else None
+    # Clean the input: remove unwanted characters except digits and dash
+    clean_code = re.sub(r"[^\d\-]", "", postal_code_str)
+    # Validate format: must match NNNN-NNN
+    if re.fullmatch(r"\d{4}-\d{3}", clean_code):
+        return clean_code
+    return None
+
+
+def extract_valid_portugal_mobile_number(mobile_str: str) -> str | None:
+    """
+    Extracts and returns a valid Portuguese mobile number in the format 9XXXXXXXX,
+    where X is a digit. Removes separators like '-', '.', or spaces.
+    Returns None if no valid number is found.
+    """
+    # Remove common separators
+    clean_number = re.sub(r"[^\d]", "", mobile_str)
+    # Validate the format: must start with 9 and be 9 digits long
+    if re.fullmatch(r"9\d{8}", clean_number):
+        return clean_number
+    return None
 
 def validate_field(value):
-    return value if value and len(str(value)) >= 6 else None
+    return value if value and len(str(value)) >= 8 else None
 
 ########################################
 ####      Main Configuration        ####
@@ -246,32 +259,25 @@ def upload():
         # Required fields
         required_fields = ['email', 'start_time', 'dialouge_post']
         missing_fields = [field for field in required_fields if field not in received_message]
-
         if missing_fields:
             app.logger.error(f"Invalid request format. Missing fields: {missing_fields}")
             return jsonify({"error": f"Missing fields: {missing_fields}"}), 400
-
         # Extract values
         email = received_message['email']
         start_time = received_message['start_time']
         dialouge_post = received_message['dialouge_post']
-
         # Combine prompt and transcription
         model, tokenizer, device = load_model()
         result = infer_entities(dialouge_post, model, tokenizer, device)
         app.logger.info(f"✅ contenet ========  {result}")
-
         # Handle empty result
         if not result:
             return jsonify({"status": "error", "message": "No entities found in the dialogue"}), 400
-
         # Group tokens by entity types
         entity_types = ['per', 'tim', 'geo', 'mobile', 'post']
         entities = {key: [] for key in entity_types}
-
         current_entity = []
         current_type = None
-
         for token, label in result:
             if label.startswith("B-"):
                 if current_entity and current_type:
@@ -285,34 +291,30 @@ def upload():
                     entities[current_type].append(" ".join(current_entity))
                 current_entity = []
                 current_type = None
-
         if current_entity and current_type:
             entities[current_type].append(" ".join(current_entity))
-
         # Construct output fields
-        address = 'not_detected'
         full_name = " ".join(entities['per'][:2]) if len(entities['per']) >= 1 else ''
         birth_day = " ".join(entities['tim'][:2]) if len(entities['tim']) >= 1 else ''
-        mobile_number = entities['mobile'][0] if entities['mobile'] else ''
-        postal_code = " ".join(entities['post']) if entities['post'] else ''
-        #postal_code = extract_valid_portugal_postal_code(postal_code)
+        mobile_number = " ".join(entities['mobile'][:2]) if len(entities['mobile']) >= 1 else ''
+        postal_code = " ".join(entities['post'][:2]) if len(entities['post']) >= 1 else ''
+        if mobile_number and len(mobile_number) >= 9:
+            mobile_number = extract_valid_portugal_mobile_number(mobile_number)
+        else:
+            postal_code = mobile_number
         if postal_code:
-            address = postcod_to_address(postal_code)
-            
-        app.logger.info(f"✅✅✅ address ========  {address}")
-
+            postal_code = extract_valid_portugal_postal_code(postal_code)
+            if postal_code:
+                postcod_to_address(postal_code, email, start_time)
+        app.logger.info(f"✅✅✅ postal_code ========  {postal_code}")
         data_identity_dic = {
             "full_name": full_name,
             "birth_day": birth_day,
             "mobile_number": mobile_number,
-            "address": address,
-            "postal_code": postal_code,
             "email": email,
             "start_time": start_time,
             }
-
         email_start_time = (email, start_time)
-
         # Check if the row exists before inserting or updating
         ehr_exist, temp_ehr_exist = check_row_exists(email_start_time)
         if (ehr_exist and temp_ehr_exist):
@@ -322,9 +324,7 @@ def upload():
             insert_initiate(email_start_time)
             update_identity_ehr(data_identity_dic)
             app.logger.info(f"✅ Identity info inserted and updated for {email_start_time} == {data_identity_dic.values}")
-
         return jsonify({"status": "success", "message": "Identity information processed successfully"}), 200
-
     except Exception as e:
         app.logger.exception("❌ Error while processing identity upload")
         return jsonify({"status": "error", "detail": str(e)}), 500
