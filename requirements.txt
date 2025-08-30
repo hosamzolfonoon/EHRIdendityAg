@@ -3,6 +3,7 @@ gunicorn
 mysql-connector-python
 peft==0.10.0
 requests
+scikit-learn
 torch==2.3.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
 transformers==4.41.1

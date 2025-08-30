@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import logging
 import mysql.connector
 from peft import PeftModel, PeftConfig
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import requests
 import re
 import torch
@@ -250,6 +251,11 @@ def refine_numbers_in_phrase(phrase: str) -> str:
     refined_phrase = re.sub(r'(\d[\d\s,.-]*)', clean_number, phrase)
     return refined_phrase
 
+def filter_text(text: str, extra_stopwords: set | None = None) -> str:
+    stop_words = set(ENGLISH_STOP_WORDS)
+    if extra_stopwords:
+        stop_words |= {w.lower() for w in extra_stopwords}
+    return " ".join(w for w in text.split() if w.lower() not in stop_words)
 ########################################
 ####      Main Configuration        ####
 ########################################
@@ -284,6 +290,7 @@ def upload():
         email = received_message['email']
         start_time = received_message['start_time']
         dialouge_post = received_message['dialouge_post']
+        dialouge_post = filter_text(dialouge_post)
         dialouge_post = refine_numbers_in_phrase(dialouge_post)
         # Combine prompt and transcription
         model, tokenizer, device = load_model()
