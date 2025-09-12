@@ -11,6 +11,6 @@ echo "Starting Gunicorn server..."
 gunicorn -w 1\
  --daemon ehridentityag:app\
  --bind 0.0.0.0:8000\
- --error-logfile ./error.log\
- --access-logfile ./access.log\
+ --error-logfile ./ehridentityag_error.log\
+ --access-logfile ./ehridentityag_access.log\
  --capture-output --log-level debug
