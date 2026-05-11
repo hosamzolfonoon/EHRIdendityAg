@@ -191,7 +191,7 @@ def postcod_to_address(postal_code, email, start_time):
     postal_code = str(postal_code)
     try:
         response = requests.post(
-            "https://dataanalyst.pt/ehrptaddsqlag/",
+            "https://ehrptaddsqlag.dataanalyst.pt/",
             json={
                 'postal_code': postal_code,
                 "email": email,
