@@ -51,7 +51,7 @@ spec:
         tier: frontend
     spec:
       containers:
-      - image: hosamzolfonoon/ehridentityag:0912
+      - image: hosamzolfonoon/ehridentityag:260522
         imagePullPolicy: Always
         name: ehridentityag
         resources:

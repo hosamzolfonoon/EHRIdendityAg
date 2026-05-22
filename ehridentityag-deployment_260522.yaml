@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ehridentityag
+  labels:
+    app: ehridentityag
+spec:
+  ports:
+    - port: 80  # Target port for the ehridentityag application
+      targetPort: 8000
+      nodePort: 30032  # Optional: Specify a NodePort (range: 30000-32767)
+  selector:
+    app: ehridentityag
+    tier: frontend
+  type: NodePort  # Changed from LoadBalancer to NodePort
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ehridentityag-pv-claim
+  labels:
+    app: ehridentityag
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ehridentityag
+  labels:
+    app: ehridentityag
+spec:
+  selector:
+    matchLabels:
+      app: ehridentityag
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ehridentityag
+        tier: frontend
+    spec:
+      containers:
+      - image: hosamzolfonoon/ehridentityag:0912
+        imagePullPolicy: Always
+        name: ehridentityag
+        resources:
+          requests:
+            memory: "1.5Gi"
+            cpu: "500m"
+          limits:
+            memory: "3Gi"
+            cpu: "1"
+        command: ["nginx", "-g", "daemon off;"]  # Keeps Nginx running in the foreground
+        env:
+        - name: DB_HOST
+          value: speechtextfast-mysql
+        
+        - name: DB_USER
+          value: speechtextfast
+        
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: speechtextfast-mysql-pass
+              key: password
+        
+        - name: DB_NAME
+          value: speechtextfast  # 🔹 Added missing database name
+        
+        ports:
+        - containerPort: 80
+          name: ehridentityag
+        
+        volumeMounts:
+        - name: ehridentityag-persistent-storage
+          mountPath: /app/data
+      
+      volumes:
+      - name: ehridentityag-persistent-storage
+        persistentVolumeClaim:
+          claimName: ehridentityag-pv-claim
+          
