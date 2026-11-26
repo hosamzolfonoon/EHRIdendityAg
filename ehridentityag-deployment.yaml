@@ -27,7 +27,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: 1Gi
 
 ---
 
@@ -51,8 +51,8 @@ spec:
         tier: frontend
     spec:
       containers:
-      - image: hosamzolfonoon/ehridentityag:260522
-        imagePullPolicy: Always
+      - image: ehridentityag:261126
+        imagePullPolicy: Never
         name: ehridentityag
         resources:
           requests:

@@ -1,5 +1,5 @@
-# Use the latest Ubuntu image with Python 3.10
-FROM python:3.10
+# Use the latest Ubuntu image with Python 3.12
+FROM python:3.12
 
 # Set working directory
 WORKDIR /ehridentityag
